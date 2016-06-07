@@ -18,6 +18,9 @@
 #include "dialogHallType.h"
 #include "dialogBldg.h"
 #include "dialogShow.h"
+#include "dialogTimes.h"
+#include "dialogMap.h"
+#include "dialogZone.h"
 
 
 #include <QDebug>
@@ -39,6 +42,9 @@ signals:
     bool isConnect();
     void adminEditBldg();
     void adminEditShow();
+    void adminEditTimes();
+    void adminEditMap();
+    void adminEditZone();
 
 public slots:
     void setAdmin();
@@ -52,6 +58,9 @@ private:
     dialogHallType* dialHall;
     dialogBldg* dialBldg;
     dialogShow* dialShow;
+    dialogTimes* dialTimes;
+    dialogMap* dialMap;
+    dialogZone* dialZone;
 
     QGridLayout* m_layout;
     QWidget* m_widget;

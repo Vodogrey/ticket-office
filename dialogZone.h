@@ -1,5 +1,5 @@
-#ifndef DIALOGBLDG_H
-#define DIALOGBLDG_H
+#ifndef DIALOGZONE_H
+#define DIALOGZONE_H
 
 #include <QWidget>
 #include <QDialog>
@@ -21,23 +21,24 @@
 #include <QObject>
 #include <QMessageBox>
 
+#include <QSortFilterProxyModel>
 
-class bdlgSqlTableModel : public QSqlRelationalTableModel
+class zoneSqlTableModel : public QSqlRelationalTableModel
 {
     Q_OBJECT
 public:
-    bdlgSqlTableModel(QObject* parent = 0);
+    zoneSqlTableModel(QObject* parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
-class dialogBldg : public QDialog
+class dialogZone : public QDialog
 {
     Q_OBJECT
 public:
-    dialogBldg(QWidget *parent = 0);
+    dialogZone(QWidget *parent = 0);
 
 public slots:
-    void editBldg();
+    void editZone();
     void clickedSubmit();
     void clickedRevert();
     void clickedDeleteRow();
@@ -57,10 +58,10 @@ private:
     QPushButton* m_addRow;
     QTableView* view;
 
-    bdlgSqlTableModel *model;
+    zoneSqlTableModel *model;
+    QSortFilterProxyModel *proxy;
     //QSqlRelationalTableModel* model;
 
     bool del;
 };
-
-#endif // DIALOGBLDG_H
+#endif // DIALOGZONE_H

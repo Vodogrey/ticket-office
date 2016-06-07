@@ -3,13 +3,11 @@
 dialogShow::dialogShow(QWidget *parent) :
     QDialog(parent)
 {
-
+    GUI();
 }
 
-
-void dialogShow::editShow()
+void dialogShow::GUI()
 {
-
     m_submit = new QPushButton("Отправить изменения");
     m_revert = new QPushButton("Отменить изменения");
     m_deleteRow = new QPushButton("Удалить выбранную строку");
@@ -21,9 +19,9 @@ void dialogShow::editShow()
 
     //buttonBox->addButton(m_revert, QDialogButtonBox::c);
 
-    model = new QSqlRelationalTableModel;
+    model = new showSqlTableModel();
     model->setTable("SHOW");
-    model->setEditStrategy(QSqlTableModel::OnManualSubmit);
+    model->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
     model->setHeaderData(0, Qt::Horizontal, tr("ID"));
     model->setHeaderData(1, Qt::Horizontal, tr("Здание"));
     model->setHeaderData(2, Qt::Horizontal, tr("Название"));
@@ -32,6 +30,7 @@ void dialogShow::editShow()
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
     model->setRelation(1, QSqlRelation("BLDG", "ID", "NAME"));
+    model->setSort(0, Qt::AscendingOrder);
 
     model->select();
 
@@ -41,6 +40,7 @@ void dialogShow::editShow()
     view->setModel(model);
     view->setItemDelegateForColumn(1,new QSqlRelationalDelegate(view));
     view->hideColumn(0);  /// здесь
+    view->resizeColumnsToContents();
 
 
     m_layout->addWidget(view);
@@ -53,13 +53,23 @@ void dialogShow::editShow()
     connect(m_revert, SIGNAL(released()),this, SLOT(clickedRevert()));
     connect(m_deleteRow, SIGNAL(released()), this, SLOT(clickedDeleteRow()));
     connect(m_addRow, SIGNAL(released()), this, SLOT(clickedAddRow()));
+}
 
+
+void dialogShow::editShow()
+{
+    model->select();
+    model->relationModel(1)->select();
+    this->exec();
 }
 
 void dialogShow::clickedSubmit()
 {
+    if(!isNull() || del) {
     model->submitAll();
     model->select();
+    del = false;
+    }
 }
 
 void dialogShow::clickedRevert()
@@ -72,30 +82,60 @@ void dialogShow::clickedRevert()
 void dialogShow::clickedDeleteRow()
 {
     model->removeRow(view->currentIndex().row());
+    del = true;
 }
 
 void dialogShow::clickedAddRow()
 {
-    QSqlQuery q;
-//    q.exec("select count(*) from HALLTYPE");
-//    q.next();
-//    int id = q.value(0).toInt() +  1;
-//    q.exec(QString("INSERT INTO HALLTYPE(ID,TYPE) VALUES(%1, '')").arg(id));
+    int lastRow = model->rowCount();
+    model->insertRow(lastRow);
+    view->selectRow(lastRow);
+    view->setFocus();
+}
 
-    q.exec("select MAX(ID) from SHOW");
-    q.next();
-    int id = q.value(0).toInt() +  1;
-    q.lastError();
-    qDebug() << "id" << id;
-    q.exec(QString("INSERT INTO SHOW(ID) VALUES(%1)").arg(id));
+bool dialogShow::isNull()
+{
+//    qDebug() << view->model()->data(view->currentIndex()).toString();
+//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+
+    for(int i = 0; i < model->rowCount(); i++) {
+       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
+               || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
+               || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
+               || view->model()->data(view->model()->index(i, 4)).toString().isEmpty()) {
+           qDebug() << "nope";
+           return true;
+       }
+    }
+    return false;
+}
 
 
+showSqlTableModel::showSqlTableModel(QObject* parent)
+    : QSqlRelationalTableModel(parent)
+{
 
-//    model->insertRow(model->rowCount() + 1);
-//    model->setData(model->index(model->rowCount()+1,0), model->rowCount() + 1);
-//    model->submitAll();
-//    model->database().commit();
-    model->select();
-    qDebug() << model->rowCount();
-    qDebug() << model->lastError();
+}
+
+/// тупой выход. по возможности подумать, как из index вытянуть model->tableName();
+QVariant showSqlTableModel::data(const QModelIndex &index, int role) const
+{
+    //QVariant value = QSqlQueryModel::data(index, role);
+
+    QVariant value = QSqlRelationalTableModel::data(index,role);
+
+    switch (role) {
+    case Qt::BackgroundColorRole: {  // Цвет фона
+        if(QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 1, QModelIndex())).toString().isEmpty()
+                || QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 2, QModelIndex())).toString().isEmpty()
+                || QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 3, QModelIndex())).toString().isEmpty()
+                || QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 4, QModelIndex())).toString().isEmpty())
+        {
+            return qVariantFromValue(QColor(255,0,0));
+        }
+        else
+            return value;
+    }
+    }
+    return value;
 }

@@ -1,5 +1,5 @@
-#ifndef DIALOGBLDG_H
-#define DIALOGBLDG_H
+#ifndef DIALOGTIMES_H
+#define DIALOGTIMES_H
 
 #include <QWidget>
 #include <QDialog>
@@ -16,37 +16,38 @@
 #include <QItemDelegate>
 #include <QSqlRelationalDelegate>
 #include <QSqlRelationalTableModel>
+#include <QItemDelegate>
 
 
 #include <QObject>
-#include <QMessageBox>
 
 
-class bdlgSqlTableModel : public QSqlRelationalTableModel
+class timesSqlTableModel : public QSqlRelationalTableModel
 {
     Q_OBJECT
 public:
-    bdlgSqlTableModel(QObject* parent = 0);
+    timesSqlTableModel(QObject* parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
-class dialogBldg : public QDialog
+class dialogTimes : public QDialog
 {
     Q_OBJECT
 public:
-    dialogBldg(QWidget *parent = 0);
+    dialogTimes(QWidget *parent = 0);
 
 public slots:
-    void editBldg();
+    void editTimes();
     void clickedSubmit();
     void clickedRevert();
     void clickedDeleteRow();
     void clickedAddRow();
 
+    bool isCanDelete(QString id);
+
 protected:
     bool isNull();
     void GUI();
-    bool isCanDelete(QString id);
 
 signals:
 
@@ -57,10 +58,7 @@ private:
     QPushButton* m_addRow;
     QTableView* view;
 
-    bdlgSqlTableModel *model;
-    //QSqlRelationalTableModel* model;
-
-    bool del;
+    timesSqlTableModel *model;
 };
 
 #endif // DIALOGBLDG_H

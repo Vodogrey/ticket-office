@@ -12,7 +12,7 @@ void dialogHallType::GUI()
 {
     m_submit = new QPushButton("Отправить изменения");
     m_revert = new QPushButton("Отменить изменения");
-    m_deleteRow = new QPushButton("Удалить выбранную строку");
+    m_deleteRow = new QPushButton("Удалить выбранные строки");
     m_addRow = new QPushButton("Добавить строку");
     m_layout = new QVBoxLayout();
     setLayout(m_layout);
@@ -21,23 +21,21 @@ void dialogHallType::GUI()
 
     //buttonBox->addButton(m_revert, QDialogButtonBox::c);
 
-    model = new MySqlTableModel;
+    model = new hallSqlTableModel;
     model->setTable("HALLTYPE");
     model->setEditStrategy(QSqlTableModel::OnManualSubmit);
     model->setHeaderData(0, Qt::Horizontal, tr("ID"));
     model->setHeaderData(1, Qt::Horizontal, tr("Тип"));
+    model->setSort(0, Qt::AscendingOrder);
     model->select();
     //model->removeColumn(0); // НЕ режем ID из-за него все к хренам идет, тупо скрываем столб ниже
 
     view = new QTableView;
-
-    view->setAlternatingRowColors(true);
-
-
     view->clearFocus();
     view->setAlternatingRowColors(true);
     view->setModel(model);
     view->hideColumn(0);  /// здесь
+    view->resizeColumnsToContents();
 
 
     m_layout->addWidget(view);
@@ -50,6 +48,8 @@ void dialogHallType::GUI()
     connect(m_revert, SIGNAL(released()),this, SLOT(clickedRevert()));
     connect(m_deleteRow, SIGNAL(released()), this, SLOT(clickedDeleteRow()));
     connect(m_addRow, SIGNAL(released()), this, SLOT(clickedAddRow()));
+
+    resize(800,600);
 }
 
 //void dialogHallTypeAdd::addHallType()
@@ -92,40 +92,42 @@ void dialogHallType::editHallType()
 
 void dialogHallType::clickedSubmit()
 {
-    if(!isNull())
+    if(!isNull()) {
         model->submitAll();
+        model->select();
+    }
 }
 
 void dialogHallType::clickedRevert()
 {
     model->revertAll();
-    if(countAdd !=0) {
-        QSqlQuery q;
-        q.exec(QString("alter sequence halltype_seq increment by -%1").arg(countAdd));
-        q.exec("select halltype_seq.nextval from halltype");
-        q.exec("alter sequence halltype_seq increment by 1");
-        countAdd = 0;
-    }
-
 }
 
 void dialogHallType::clickedDeleteRow()
 {
-    model->removeRow(view->currentIndex().row());
+
+    int count = view->selectionModel()->selectedIndexes().count();
+    qDebug() << count;
+    for(int i = 0; i < count; i++) {
+        QString id = model->data(model->index(view->selectionModel()->selectedIndexes().at(i).row(), 0, QModelIndex())).toString();
+        qDebug() << "id" << id;
+        if(isCanDelete(id)) {
+            model->removeRow(view->selectionModel()->selectedIndexes().at(i).row());
+        }
+        else {
+            QSqlQuery q;
+            q.exec(QString("select TYPE from HALLTYPE where ID = %1").arg(id));
+            q.next();
+            QString type = q.value(0).toString();
+            QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
+                     /* db.lastError().text()*/ QString("Есть здание с типом %1").arg(type));
+        }
+    }
 }
 
 void dialogHallType::clickedAddRow()
 {
-
-// god is here
-    QSqlQuery q;
     int lastRow = model->rowCount();
-    q.exec("select halltype_seq.nextval from halltype"); // и что тут не нравится?? // обязательно nextval. придется считать записи
-    q.next();
-    int id = q.value(0).toInt();
-    countAdd++;
-
-    qDebug() << "id" << id;
     model->insertRow(lastRow);
    // model->setData(model->index(lastRow,0),id);
     view->selectRow(lastRow);
@@ -147,14 +149,14 @@ bool dialogHallType::isNull()
     return false;
 }
 
-MySqlTableModel::MySqlTableModel(QObject* parent)
+hallSqlTableModel::hallSqlTableModel(QObject* parent)
     : QSqlTableModel(parent)
 {
 
 }
 
-
-QVariant MySqlTableModel::data(const QModelIndex &index, int role) const
+/// тупой выход. по возможности подумать, как из index вытянуть model->tableName();
+QVariant hallSqlTableModel::data(const QModelIndex &index, int role) const
 {
     //QVariant value = QSqlQueryModel::data(index, role);
     QVariant value = QSqlTableModel::data(index,role);
@@ -174,4 +176,16 @@ QVariant MySqlTableModel::data(const QModelIndex &index, int role) const
     }
     }
     return value;
+}
+
+
+bool dialogHallType::isCanDelete(QString id)
+{
+    QSqlQuery q;
+    q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
+    q.next();
+    if(!q.isNull(0)) {
+    return false;
+    }
+    return true;
 }

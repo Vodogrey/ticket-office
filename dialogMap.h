@@ -1,5 +1,5 @@
-#ifndef DIALOGBLDG_H
-#define DIALOGBLDG_H
+#ifndef DIALOGMAP_H
+#define DIALOGMAP_H
 
 #include <QWidget>
 #include <QDialog>
@@ -21,34 +21,35 @@
 #include <QObject>
 #include <QMessageBox>
 
-
-class bdlgSqlTableModel : public QSqlRelationalTableModel
+class mapSqlTableModel : public QSqlRelationalTableModel
 {
     Q_OBJECT
 public:
-    bdlgSqlTableModel(QObject* parent = 0);
+    mapSqlTableModel(QObject* parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
-class dialogBldg : public QDialog
+class dialogMap : public QDialog
 {
     Q_OBJECT
 public:
-    dialogBldg(QWidget *parent = 0);
+    dialogMap(QWidget* parent = 0);
 
 public slots:
-    void editBldg();
+    void editMap();
     void clickedSubmit();
     void clickedRevert();
     void clickedDeleteRow();
     void clickedAddRow();
 
+    bool isCanDelete(QString id);
+
 protected:
     bool isNull();
     void GUI();
-    bool isCanDelete(QString id);
 
 signals:
+    bool canDelete(QString);
 
 private:
     QPushButton* m_submit;
@@ -57,10 +58,9 @@ private:
     QPushButton* m_addRow;
     QTableView* view;
 
-    bdlgSqlTableModel *model;
-    //QSqlRelationalTableModel* model;
+    mapSqlTableModel *model;
 
     bool del;
 };
 
-#endif // DIALOGBLDG_H
+#endif // DIALOGMAP_H

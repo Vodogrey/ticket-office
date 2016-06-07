@@ -11,12 +11,18 @@ SOURCES += main.cpp \
     connectdtabase.cpp \
     dialogHallType.cpp \
     dialogBldg.cpp \
-    dialogShow.cpp
+    dialogShow.cpp \
+    dialogTimes.cpp \
+    dialogMap.cpp \
+    dialogZone.cpp
 
 HEADERS += \
     mainwindow.h \
     connectdtabase.h \
     dialogHallType.h \
     dialogBldg.h \
-    dialogShow.h
+    dialogShow.h \
+    dialogTimes.h \
+    dialogMap.h \
+    dialogZone.h
 

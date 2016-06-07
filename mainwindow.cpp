@@ -8,10 +8,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     dialHall = new dialogHallType();
     dialBldg = new dialogBldg();
     dialShow = new dialogShow();
+    dialTimes = new dialogTimes();
+    dialMap = new dialogMap();
+    dialZone = new dialogZone();
     GUI();
     buttons();
+    validateConnect();
 }
-//Ваш заказ В-05066865 принят.
+
 void MainWindow::GUI()
 {
     addMenu();
@@ -23,6 +27,9 @@ void MainWindow::buttons()
     connect(this, SIGNAL(isConnect()), connecting, SLOT(isConnected()));
     connect(this, SIGNAL(adminEditBldg()), dialBldg, SLOT(editBldg()));
     connect(this, SIGNAL(adminEditShow()), dialShow, SLOT(editShow()));
+    connect(this, SIGNAL(adminEditTimes()),dialTimes, SLOT(editTimes()));
+    connect(this, SIGNAL(adminEditMap()), dialMap, SLOT(editMap()));
+    connect(this, SIGNAL(adminEditZone()), dialZone, SLOT(editZone()));
 }
 
 void MainWindow::addMenu()
@@ -51,7 +58,8 @@ void MainWindow::validateConnect()
 {
     bool connect = isConnect();
     if(!connect)
-        qApp->quit();
+        this->close(),
+        qDebug() << "close";
 }
 
 
@@ -75,9 +83,12 @@ void MainWindow::adminActions()
 
     admin.setText("Кукусики. что делаем?");
 
-    QPushButton *editBldg = admin.addButton("Управление зданием",QMessageBox::ActionRole);
-    QPushButton *editShow = admin.addButton("Управление шоу", QMessageBox::ActionRole);
-    QPushButton *editType = admin.addButton("Управление типом здания", QMessageBox::ActionRole);
+    QPushButton* editBldg = admin.addButton("Управление зданием",QMessageBox::ActionRole);
+    QPushButton* editShow = admin.addButton("Управление шоу", QMessageBox::ActionRole);
+    QPushButton* editType = admin.addButton("Управление типом здания", QMessageBox::ActionRole);
+    QPushButton* editTimes = admin.addButton("Управление Временем", QMessageBox::ActionRole);
+    QPushButton* editMap = admin.addButton("Управление картой здания", QMessageBox::ActionRole);
+    QPushButton* editZone = admin.addButton("Управление зонами", QMessageBox::ActionRole);
 
     admin.exec();
 
@@ -90,6 +101,14 @@ void MainWindow::adminActions()
 
         if(admin.clickedButton() == editType) {
             emit adminEditType();
-
+        }
+        if(admin.clickedButton() == editTimes) {
+            emit adminEditTimes();
+        }
+        if(admin.clickedButton() == editMap) {
+            emit adminEditMap();
+        }
+        if(admin.clickedButton() == editZone) {
+            emit adminEditZone();
         }
 }

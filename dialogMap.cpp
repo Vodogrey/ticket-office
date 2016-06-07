@@ -1,37 +1,36 @@
-#include "dialogBldg.h"
+#include "dialogMap.h"
 
-dialogBldg::dialogBldg(QWidget *parent) :
+dialogMap::dialogMap(QWidget *parent) :
     QDialog(parent)
 {
     GUI();
     del = false;
 }
 
-void dialogBldg::GUI()
+void dialogMap::GUI()
 {
     m_submit = new QPushButton("Отправить изменения");
     m_revert = new QPushButton("Отменить изменения");
     m_deleteRow = new QPushButton("Удалить выбранные строки");
     m_addRow = new QPushButton("Добавить строку");
 
-    QVBoxLayout *m_layout = new QVBoxLayout();
+    QVBoxLayout* m_layout = new QVBoxLayout();
     setLayout(m_layout);
 
 
     //buttonBox->addButton(m_revert, QDialogButtonBox::c);
 
-    model = new bdlgSqlTableModel();
+    model = new mapSqlTableModel();
     //model = new QSqlRelationalTableModel();
 
-    model->setTable("BLDG");
+    model->setTable("MAP");
     model->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
-    model->setHeaderData(0, Qt::Horizontal, tr("ID"));
-    model->setHeaderData(1, Qt::Horizontal, tr("Название"));
-    model->setHeaderData(2, Qt::Horizontal, tr("Тип"));
-    model->setHeaderData(3, Qt::Horizontal, tr("Адрес"));
+    model->setHeaderData(0, Qt::Horizontal, tr("Здание"));
+    model->setHeaderData(1, Qt::Horizontal, tr("Ряд"));
+    model->setHeaderData(2, Qt::Horizontal, tr("Число мест"));
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
-    model->setRelation(2, QSqlRelation("HALLTYPE", "ID", "TYPE"));
+    model->setRelation(0, QSqlRelation("BLDG", "ID", "NAME"));
     model->setSort(0, Qt::AscendingOrder);
     model->select();
 
@@ -39,8 +38,7 @@ void dialogBldg::GUI()
 
     view = new QTableView;
     view->setModel(model);
-    view->setItemDelegateForColumn(2,new QSqlRelationalDelegate(view));
-    view->hideColumn(0);  /// здесь
+    view->setItemDelegateForColumn(0,new QSqlRelationalDelegate(view));
     view->resizeColumnsToContents();
 
 
@@ -56,53 +54,53 @@ void dialogBldg::GUI()
     connect(m_addRow, SIGNAL(released()), this, SLOT(clickedAddRow()));
 }
 
-void dialogBldg::editBldg()
+void dialogMap::editMap()
 {
    model->select();
-   model->relationModel(2)->select();
+   model->relationModel(0)->select();
    this->exec();
 }
 
-void dialogBldg::clickedSubmit()
+void dialogMap::clickedSubmit()
 {
     if(!isNull() || del) {
     model->submitAll();
-    model->select();
+   // model->select();
     del = false;
     }
 }
 
-void dialogBldg::clickedRevert()
+void dialogMap::clickedRevert()
 {
     model->revertAll();
 
 }
-void dialogBldg::clickedDeleteRow()
+// косячит удаление здания nope
+void dialogMap::clickedDeleteRow()
 {
+//    model->removeRow(view->currentIndex().row());
+//    del = true;
 
     int count = view->selectionModel()->selectedIndexes().count();
     for(int i = 0; i < count; i++) {
         QString id = model->data(model->index(view->selectionModel()->selectedIndexes().at(i).row(), 0, QModelIndex())).toString();
         qDebug() << "id" << id;
-        if(isCanDelete(id)) {
+        if(canDelete(id)) {
             model->removeRow(view->selectionModel()->selectedIndexes().at(i).row());
             del = true;
         }
         else {
-            QSqlQuery q;
-            q.exec(QString("select NAME from BLDG where ID = %1").arg(id));
-            q.next();
-            QString type = q.value(0).toString();
+            // эта часть лучше реализована в show && bldg
             QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
-                     /* db.lastError().text()*/ QString("Есть концерт в здании %1").arg(type));
+                     /* db.lastError().text()*/ "Есть концерт в этом здании");
         }
     }
 }
 
-void dialogBldg::clickedAddRow()
+void dialogMap::clickedAddRow()
 {
     if(!isNull() || del) {
-    int lastRow = model->rowCount();;
+    int lastRow = model->rowCount();
     model->insertRow(lastRow);
     view->selectRow(lastRow);
     view->setFocus();
@@ -110,15 +108,15 @@ void dialogBldg::clickedAddRow()
 }
 
 
-bool dialogBldg::isNull()
+bool dialogMap::isNull()
 {
 //    qDebug() << view->model()->data(view->currentIndex()).toString();
 //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 2)).toString().isNull()
-               || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
+       if(view->model()->data(view->model()->index(i, 0)).toString().isEmpty()
+               || view->model()->data(view->model()->index(i, 1)).toString().isNull()
+               || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
                ) {
            qDebug() << "nope";
            return true;
@@ -127,25 +125,24 @@ bool dialogBldg::isNull()
     return false;
 }
 
-bdlgSqlTableModel::bdlgSqlTableModel(QObject* parent)
+mapSqlTableModel::mapSqlTableModel(QObject* parent)
     : QSqlRelationalTableModel(parent)
 {
 
 }
 
 /// тупой выход. по возможности подумать, как из index вытянуть model->tableName();
-QVariant bdlgSqlTableModel::data(const QModelIndex &index, int role) const
+QVariant mapSqlTableModel::data(const QModelIndex &index, int role) const
 {
     //QVariant value = QSqlQueryModel::data(index, role);
 
     QVariant value = QSqlRelationalTableModel::data(index,role);
 
-    QString iColor = QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 1, QModelIndex())).toString();
-    QString iColor2 = QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 3, QModelIndex())).toString();
-
     switch (role) {
     case Qt::BackgroundColorRole: {  // Цвет фона
-        if(iColor.isEmpty() || iColor2.isEmpty())
+        if(QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 0, QModelIndex())).toString().isEmpty()
+                || QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 1, QModelIndex())).toString().isEmpty()
+                || QSqlRelationalTableModel::data(QSqlRelationalTableModel::index(index.row(), 2, QModelIndex())).toString().isEmpty())
         {
             return qVariantFromValue(QColor(255,0,0));
         }
@@ -156,13 +153,13 @@ QVariant bdlgSqlTableModel::data(const QModelIndex &index, int role) const
     return value;
 }
 
-bool dialogBldg::isCanDelete(QString id)
+bool dialogMap::isCanDelete(QString id)
 {
-    QSqlQuery q;
-    q.exec(QString("select IDBLDG from SHOW where IDBLDG = %1").arg(id));
-    q.next();
-    if(!q.isNull(0)) {
-    return false;
-    }
+//    QSqlQuery q;
+//    q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
+//    q.next();
+//    if(!q.isNull(0)) {
+//    return false;
+//    }
     return true;
 }

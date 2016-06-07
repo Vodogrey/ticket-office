@@ -1,37 +1,40 @@
-#include "dialogBldg.h"
+#include "dialogZone.h"
 
-dialogBldg::dialogBldg(QWidget *parent) :
+dialogZone::dialogZone(QWidget *parent) :
     QDialog(parent)
 {
     GUI();
     del = false;
 }
 
-void dialogBldg::GUI()
+void dialogZone::GUI()
 {
     m_submit = new QPushButton("Отправить изменения");
     m_revert = new QPushButton("Отменить изменения");
     m_deleteRow = new QPushButton("Удалить выбранные строки");
     m_addRow = new QPushButton("Добавить строку");
 
-    QVBoxLayout *m_layout = new QVBoxLayout();
+    QVBoxLayout* m_layout = new QVBoxLayout();
     setLayout(m_layout);
 
-
-    //buttonBox->addButton(m_revert, QDialogButtonBox::c);
-
-    model = new bdlgSqlTableModel();
+    model = new zoneSqlTableModel();
+    proxy = new QSortFilterProxyModel();
+    proxy->setSourceModel(model);
     //model = new QSqlRelationalTableModel();
 
-    model->setTable("BLDG");
+    model->setTable("ZONE");
     model->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
     model->setHeaderData(0, Qt::Horizontal, tr("ID"));
-    model->setHeaderData(1, Qt::Horizontal, tr("Название"));
-    model->setHeaderData(2, Qt::Horizontal, tr("Тип"));
-    model->setHeaderData(3, Qt::Horizontal, tr("Адрес"));
+    model->setHeaderData(1, Qt::Horizontal, tr("Шоу"));
+    model->setHeaderData(2, Qt::Horizontal, tr("Время"));
+    model->setHeaderData(3, Qt::Horizontal, tr("Ряд"));
+    model->setHeaderData(4, Qt::Horizontal, tr("Начальное место"));
+    model->setHeaderData(5, Qt::Horizontal, tr("Конечное место"));
+    model->setHeaderData(6, Qt::Horizontal, tr("Цена"));
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
-    model->setRelation(2, QSqlRelation("HALLTYPE", "ID", "TYPE"));
+    model->setRelation(1, QSqlRelation("SHOW", "ID", "ID_SHOW"));
+    model->setRelation(2, QSqlRelation("TIMES", "ID_SHOW", "SHOWNAME"));
     model->setSort(0, Qt::AscendingOrder);
     model->select();
 
@@ -39,7 +42,7 @@ void dialogBldg::GUI()
 
     view = new QTableView;
     view->setModel(model);
-    view->setItemDelegateForColumn(2,new QSqlRelationalDelegate(view));
+    view->setItemDelegateForColumn(1,new QSqlRelationalDelegate(view));
     view->hideColumn(0);  /// здесь
     view->resizeColumnsToContents();
 
@@ -56,14 +59,20 @@ void dialogBldg::GUI()
     connect(m_addRow, SIGNAL(released()), this, SLOT(clickedAddRow()));
 }
 
-void dialogBldg::editBldg()
+void dialogZone::editZone()
 {
    model->select();
-   model->relationModel(2)->select();
+//   model->relationModel(5)->select();
+//// все фигня, давай по-новой
+ //  model->insertColumn(6);
+//   model->setHeaderData(6, Qt::Horizontal, tr("Вычслимый"));
+//   model->setRelation(6, QSqlRelation("SHOW", "ID", "SHOWNAME"));
+//   view->setItemDelegateForColumn(6,new QSqlRelationalDelegate(view));
+//   model->setData(model->index(0,6),33);
    this->exec();
 }
 
-void dialogBldg::clickedSubmit()
+void dialogZone::clickedSubmit()
 {
     if(!isNull() || del) {
     model->submitAll();
@@ -72,12 +81,12 @@ void dialogBldg::clickedSubmit()
     }
 }
 
-void dialogBldg::clickedRevert()
+void dialogZone::clickedRevert()
 {
     model->revertAll();
 
 }
-void dialogBldg::clickedDeleteRow()
+void dialogZone::clickedDeleteRow()
 {
 
     int count = view->selectionModel()->selectedIndexes().count();
@@ -99,7 +108,7 @@ void dialogBldg::clickedDeleteRow()
     }
 }
 
-void dialogBldg::clickedAddRow()
+void dialogZone::clickedAddRow()
 {
     if(!isNull() || del) {
     int lastRow = model->rowCount();;
@@ -110,7 +119,7 @@ void dialogBldg::clickedAddRow()
 }
 
 
-bool dialogBldg::isNull()
+bool dialogZone::isNull()
 {
 //    qDebug() << view->model()->data(view->currentIndex()).toString();
 //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
@@ -127,14 +136,14 @@ bool dialogBldg::isNull()
     return false;
 }
 
-bdlgSqlTableModel::bdlgSqlTableModel(QObject* parent)
+zoneSqlTableModel::zoneSqlTableModel(QObject* parent)
     : QSqlRelationalTableModel(parent)
 {
 
 }
 
 /// тупой выход. по возможности подумать, как из index вытянуть model->tableName();
-QVariant bdlgSqlTableModel::data(const QModelIndex &index, int role) const
+QVariant zoneSqlTableModel::data(const QModelIndex &index, int role) const
 {
     //QVariant value = QSqlQueryModel::data(index, role);
 
@@ -156,7 +165,7 @@ QVariant bdlgSqlTableModel::data(const QModelIndex &index, int role) const
     return value;
 }
 
-bool dialogBldg::isCanDelete(QString id)
+bool dialogZone::isCanDelete(QString id)
 {
     QSqlQuery q;
     q.exec(QString("select IDBLDG from SHOW where IDBLDG = %1").arg(id));

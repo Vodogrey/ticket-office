@@ -18,12 +18,14 @@
 
 #include <QObject>
 
+#include <QMessageBox>
 
-class MySqlTableModel : public QSqlTableModel
+
+class hallSqlTableModel : public QSqlTableModel
 {
     Q_OBJECT
 public:
-    MySqlTableModel(QObject* parent = 0);
+    hallSqlTableModel(QObject* parent = 0);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 };
 
@@ -38,6 +40,7 @@ public:
 protected:
     void GUI();
     bool isNull();
+    bool isCanDelete(QString id);
 
 public slots:
     void editHallType();
@@ -57,7 +60,7 @@ private:
     QPushButton* m_addRow;
     QTableView* view;
 
-    MySqlTableModel *model;
+    hallSqlTableModel *model;
 
     int countAdd;
 };

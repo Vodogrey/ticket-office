@@ -20,6 +20,14 @@
 
 #include <QObject>
 
+class showSqlTableModel : public QSqlRelationalTableModel
+{
+    Q_OBJECT
+public:
+    showSqlTableModel(QObject* parent = 0);
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
+};
+
 class dialogShow : public QDialog
 {
     Q_OBJECT
@@ -33,6 +41,10 @@ public slots:
     void clickedDeleteRow();
     void clickedAddRow();
 
+protected:
+    void GUI();
+    bool isNull();
+
 signals:
 
 private:
@@ -42,7 +54,8 @@ private:
     QPushButton* m_addRow;
     QTableView* view;
 
-    QSqlRelationalTableModel *model;
+    showSqlTableModel *model;
+    bool del;
 };
 
 #endif // DIALOGSHOW_H
