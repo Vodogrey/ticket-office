@@ -21,6 +21,8 @@
 
 #include <QObject>
 
+#include <QMessageBox>
+
 
 class timesSqlTableModel : public QSqlRelationalTableModel
 {
@@ -48,6 +50,7 @@ public slots:
 protected:
     bool isNull();
     void GUI();
+    bool isCanAdd();
 
 signals:
 
@@ -59,6 +62,8 @@ private:
     QTableView* view;
 
     timesSqlTableModel *model;
+
+    bool del;
 };
 
 #endif // DIALOGBLDG_H

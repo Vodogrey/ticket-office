@@ -87,7 +87,7 @@ void dialogHallType::GUI()
 void dialogHallType::editHallType()
 {
     model->select();
-   this->exec();
+    this->exec();
 }
 
 void dialogHallType::clickedSubmit()
@@ -120,7 +120,7 @@ void dialogHallType::clickedDeleteRow()
             q.next();
             QString type = q.value(0).toString();
             QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
-                     /* db.lastError().text()*/ QString("Есть здание с типом %1").arg(type));
+                                  /* db.lastError().text()*/ QString("Есть здание с типом %1").arg(type));
         }
     }
 }
@@ -129,7 +129,7 @@ void dialogHallType::clickedAddRow()
 {
     int lastRow = model->rowCount();
     model->insertRow(lastRow);
-   // model->setData(model->index(lastRow,0),id);
+    // model->setData(model->index(lastRow,0),id);
     view->selectRow(lastRow);
     view->setFocus();
     //qDebug() << "ins" << model->lastError().text();
@@ -137,14 +137,14 @@ void dialogHallType::clickedAddRow()
 
 bool dialogHallType::isNull()
 {
-//    qDebug() << view->model()->data(view->currentIndex()).toString();
-//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+    //    qDebug() << view->model()->data(view->currentIndex()).toString();
+    //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()) {
-           qDebug() << "nope";
-           return true;
-       }
+        if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()) {
+            qDebug() << "nope";
+            return true;
+        }
     }
     return false;
 }
@@ -185,7 +185,7 @@ bool dialogHallType::isCanDelete(QString id)
     q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
     q.next();
     if(!q.isNull(0)) {
-    return false;
+        return false;
     }
     return true;
 }

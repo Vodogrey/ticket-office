@@ -58,9 +58,9 @@ void dialogBldg::GUI()
 
 void dialogBldg::editBldg()
 {
-   model->select();
+  // model->select();
    model->relationModel(2)->select();
-   this->exec();
+  // this->exec();
 }
 
 void dialogBldg::clickedSubmit()

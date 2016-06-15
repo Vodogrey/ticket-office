@@ -18,23 +18,21 @@ void dialogZone::GUI()
     setLayout(m_layout);
 
     model = new zoneSqlTableModel();
-    proxy = new QSortFilterProxyModel();
-    proxy->setSourceModel(model);
+    // proxy = new QSortFilterProxyModel();
+    //proxy->setSourceModel(model);
     //model = new QSqlRelationalTableModel();
 
     model->setTable("ZONE");
     model->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
     model->setHeaderData(0, Qt::Horizontal, tr("ID"));
     model->setHeaderData(1, Qt::Horizontal, tr("Шоу"));
-    model->setHeaderData(2, Qt::Horizontal, tr("Время"));
-    model->setHeaderData(3, Qt::Horizontal, tr("Ряд"));
-    model->setHeaderData(4, Qt::Horizontal, tr("Начальное место"));
-    model->setHeaderData(5, Qt::Horizontal, tr("Конечное место"));
-    model->setHeaderData(6, Qt::Horizontal, tr("Цена"));
+    model->setHeaderData(2, Qt::Horizontal, tr("Ряд"));
+    model->setHeaderData(3, Qt::Horizontal, tr("Начальное место"));
+    model->setHeaderData(4, Qt::Horizontal, tr("Конечное место"));
+    model->setHeaderData(5, Qt::Horizontal, tr("Цена"));
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
-    model->setRelation(1, QSqlRelation("SHOW", "ID", "ID_SHOW"));
-    model->setRelation(2, QSqlRelation("TIMES", "ID_SHOW", "SHOWNAME"));
+    model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME"));
     model->setSort(0, Qt::AscendingOrder);
     model->select();
 
@@ -43,7 +41,7 @@ void dialogZone::GUI()
     view = new QTableView;
     view->setModel(model);
     view->setItemDelegateForColumn(1,new QSqlRelationalDelegate(view));
-    view->hideColumn(0);  /// здесь
+    view->hideColumn(0);  // здесь скрываем
     view->resizeColumnsToContents();
 
 
@@ -61,23 +59,21 @@ void dialogZone::GUI()
 
 void dialogZone::editZone()
 {
-   model->select();
-//   model->relationModel(5)->select();
-//// все фигня, давай по-новой
- //  model->insertColumn(6);
-//   model->setHeaderData(6, Qt::Horizontal, tr("Вычслимый"));
-//   model->setRelation(6, QSqlRelation("SHOW", "ID", "SHOWNAME"));
-//   view->setItemDelegateForColumn(6,new QSqlRelationalDelegate(view));
-//   model->setData(model->index(0,6),33);
-   this->exec();
+    model->relationModel(1)->select();
+    //// все фигня, давай по-новой
+    //  model->insertColumn(6);
+    //   model->setHeaderData(6, Qt::Horizontal, tr("Вычслимый"));
+    //   model->setRelation(6, QSqlRelation("SHOW", "ID", "SHOWNAME"));
+    //   view->setItemDelegateForColumn(6,new QSqlRelationalDelegate(view));
+    //   model->setData(model->index(0,6),33);
 }
 
 void dialogZone::clickedSubmit()
 {
     if(!isNull() || del) {
-    model->submitAll();
-    model->select();
-    del = false;
+        model->submitAll();
+        model->select();
+        del = false;
     }
 }
 
@@ -103,7 +99,7 @@ void dialogZone::clickedDeleteRow()
             q.next();
             QString type = q.value(0).toString();
             QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
-                     /* db.lastError().text()*/ QString("Есть концерт в здании %1").arg(type));
+                                  /* db.lastError().text()*/ QString("Есть концерт в здании %1").arg(type));
         }
     }
 }
@@ -111,27 +107,27 @@ void dialogZone::clickedDeleteRow()
 void dialogZone::clickedAddRow()
 {
     if(!isNull() || del) {
-    int lastRow = model->rowCount();;
-    model->insertRow(lastRow);
-    view->selectRow(lastRow);
-    view->setFocus();
+        int lastRow = model->rowCount();;
+        model->insertRow(lastRow);
+        view->selectRow(lastRow);
+        view->setFocus();
     }
 }
 
 
 bool dialogZone::isNull()
 {
-//    qDebug() << view->model()->data(view->currentIndex()).toString();
-//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+    //    qDebug() << view->model()->data(view->currentIndex()).toString();
+    //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 2)).toString().isNull()
-               || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
-               ) {
-           qDebug() << "nope";
-           return true;
-       }
+        if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 2)).toString().isNull()
+                || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
+                ) {
+            qDebug() << "nope";
+            return true;
+        }
     }
     return false;
 }
@@ -171,7 +167,7 @@ bool dialogZone::isCanDelete(QString id)
     q.exec(QString("select IDBLDG from SHOW where IDBLDG = %1").arg(id));
     q.next();
     if(!q.isNull(0)) {
-    return false;
+        return false;
     }
     return true;
 }

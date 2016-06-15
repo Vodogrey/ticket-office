@@ -13,6 +13,8 @@
 
 #include <QSqlQuery>
 
+#include <QTabWidget>
+
 
 #include "connectdtabase.h"
 #include "dialogHallType.h"
@@ -21,6 +23,7 @@
 #include "dialogTimes.h"
 #include "dialogMap.h"
 #include "dialogZone.h"
+#include "dialogTicket.h"
 
 
 #include <QDebug>
@@ -48,6 +51,7 @@ signals:
 
 public slots:
     void setAdmin();
+    void updateRelation(int page);
 
 
 protected slots:
@@ -61,11 +65,15 @@ private:
     dialogTimes* dialTimes;
     dialogMap* dialMap;
     dialogZone* dialZone;
+    dialogTicket* dialTicket;
+
 
     QGridLayout* m_layout;
     QWidget* m_widget;
 
     QMenu* m_menu;
+
+    QTabWidget *tabWidget;
 
 
     bool isAdmin;

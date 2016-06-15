@@ -58,17 +58,17 @@ void dialogShow::GUI()
 
 void dialogShow::editShow()
 {
-    model->select();
+  //  model->select();
     model->relationModel(1)->select();
-    this->exec();
+  //  this->exec();
 }
 
 void dialogShow::clickedSubmit()
 {
     if(!isNull() || del) {
-    model->submitAll();
-    model->select();
-    del = false;
+        model->submitAll();
+        model->select();
+        del = false;
     }
 }
 
@@ -81,8 +81,23 @@ void dialogShow::clickedRevert()
 
 void dialogShow::clickedDeleteRow()
 {
-    model->removeRow(view->currentIndex().row());
-    del = true;
+    int count = view->selectionModel()->selectedIndexes().count();
+    for(int i = 0; i < count; i++) {
+        QString id = model->data(model->index(view->selectionModel()->selectedIndexes().at(i).row(), 0, QModelIndex())).toString();
+        qDebug() << "id" << id;
+        if(isCanDelete(id)) {
+            model->removeRow(view->selectionModel()->selectedIndexes().at(i).row());
+            del = true;
+        }
+        else {
+            QSqlQuery q;
+            q.exec(QString("select SHOWNAME from show where ID =  %1").arg(id));
+            q.next();
+            QString type = q.value(0).toString();
+            QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
+                     /* db.lastError().text()*/ QString("Есть билеты на шоу %1").arg(type));
+        }
+    }
 }
 
 void dialogShow::clickedAddRow()
@@ -95,19 +110,30 @@ void dialogShow::clickedAddRow()
 
 bool dialogShow::isNull()
 {
-//    qDebug() << view->model()->data(view->currentIndex()).toString();
-//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+    //    qDebug() << view->model()->data(view->currentIndex()).toString();
+    //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 4)).toString().isEmpty()) {
-           qDebug() << "nope";
-           return true;
-       }
+        if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 3)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 4)).toString().isEmpty()) {
+            qDebug() << "nope";
+            return true;
+        }
     }
     return false;
+}
+
+bool dialogShow::isCanDelete(QString id)
+{
+    QSqlQuery q;
+    q.exec(QString("select IDBLDG from SHOW where IDBLDG = %1").arg(id));
+    q.next();
+    if(!q.isNull(0)) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -117,7 +143,6 @@ showSqlTableModel::showSqlTableModel(QObject* parent)
 
 }
 
-/// тупой выход. по возможности подумать, как из index вытянуть model->tableName();
 QVariant showSqlTableModel::data(const QModelIndex &index, int role) const
 {
     //QVariant value = QSqlQueryModel::data(index, role);

@@ -11,9 +11,9 @@ connectDtabase::connectDtabase(QObject *parent) : QObject(parent)
     bool ok = db.open();
 
     if (!ok) {
-          QMessageBox::critical(0, QObject::tr("Ошибка соединения"),
-                   /* db.lastError().text()*/ "Обратитесь за помощью к Создателю");
-        }
+        QMessageBox::critical(0, QObject::tr("Ошибка соединения"),
+                              /* db.lastError().text()*/ "Обратитесь за помощью к Создателю");
+    }
     else {
         QMessageBox::information(0, QObject::tr("Соединение установлено"),
                                  "Добро пожаловать");
@@ -21,11 +21,11 @@ connectDtabase::connectDtabase(QObject *parent) : QObject(parent)
     }
 
     // qDebug() << "drivers" << QSqlDatabase::drivers();
-     //qDebug() << "libs" << QApplication::libraryPaths();
+    //qDebug() << "libs" << QApplication::libraryPaths();
     // QPluginLoader load;
     // load.setFileName("/opt/Qt/5.5/gcc_64/plugins/sqldrivers/libqsqloci.so");
-     //qDebug() << load.load();
- //   qDebug() << "loads" << load.errorString();
+    //qDebug() << load.load();
+    //   qDebug() << "loads" << load.errorString();
 }
 
 bool connectDtabase::isConnected()

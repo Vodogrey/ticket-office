@@ -14,7 +14,8 @@ SOURCES += main.cpp \
     dialogShow.cpp \
     dialogTimes.cpp \
     dialogMap.cpp \
-    dialogZone.cpp
+    dialogZone.cpp \
+    dialogTicket.cpp
 
 HEADERS += \
     mainwindow.h \
@@ -24,5 +25,6 @@ HEADERS += \
     dialogShow.h \
     dialogTimes.h \
     dialogMap.h \
-    dialogZone.h
+    dialogZone.h \
+    dialogTicket.h
 

@@ -20,6 +20,8 @@
 
 #include <QObject>
 
+#include <QMessageBox>
+
 class showSqlTableModel : public QSqlRelationalTableModel
 {
     Q_OBJECT
@@ -44,6 +46,7 @@ public slots:
 protected:
     void GUI();
     bool isNull();
+    bool isCanDelete(QString id);
 
 signals:
 

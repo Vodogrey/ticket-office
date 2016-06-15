@@ -56,17 +56,17 @@ void dialogMap::GUI()
 
 void dialogMap::editMap()
 {
-   model->select();
-   model->relationModel(0)->select();
-   this->exec();
+  //  model->select();
+    model->relationModel(0)->select();
+  //  this->exec();
 }
 
 void dialogMap::clickedSubmit()
 {
     if(!isNull() || del) {
-    model->submitAll();
-   // model->select();
-    del = false;
+        model->submitAll();
+        // model->select();
+        del = false;
     }
 }
 
@@ -78,8 +78,8 @@ void dialogMap::clickedRevert()
 // косячит удаление здания nope
 void dialogMap::clickedDeleteRow()
 {
-//    model->removeRow(view->currentIndex().row());
-//    del = true;
+    //    model->removeRow(view->currentIndex().row());
+    //    del = true;
 
     int count = view->selectionModel()->selectedIndexes().count();
     for(int i = 0; i < count; i++) {
@@ -92,7 +92,7 @@ void dialogMap::clickedDeleteRow()
         else {
             // эта часть лучше реализована в show && bldg
             QMessageBox::critical(0, QObject::tr("Ошибка удаления"),
-                     /* db.lastError().text()*/ "Есть концерт в этом здании");
+                                  /* db.lastError().text()*/ "Есть концерт в этом здании");
         }
     }
 }
@@ -100,27 +100,27 @@ void dialogMap::clickedDeleteRow()
 void dialogMap::clickedAddRow()
 {
     if(!isNull() || del) {
-    int lastRow = model->rowCount();
-    model->insertRow(lastRow);
-    view->selectRow(lastRow);
-    view->setFocus();
+        int lastRow = model->rowCount();
+        model->insertRow(lastRow);
+        view->selectRow(lastRow);
+        view->setFocus();
     }
 }
 
 
 bool dialogMap::isNull()
 {
-//    qDebug() << view->model()->data(view->currentIndex()).toString();
-//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+    //    qDebug() << view->model()->data(view->currentIndex()).toString();
+    //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 0)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 1)).toString().isNull()
-               || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
-               ) {
-           qDebug() << "nope";
-           return true;
-       }
+        if(view->model()->data(view->model()->index(i, 0)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 1)).toString().isNull()
+                || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()
+                ) {
+            qDebug() << "nope";
+            return true;
+        }
     }
     return false;
 }
@@ -155,11 +155,11 @@ QVariant mapSqlTableModel::data(const QModelIndex &index, int role) const
 
 bool dialogMap::isCanDelete(QString id)
 {
-//    QSqlQuery q;
-//    q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
-//    q.next();
-//    if(!q.isNull(0)) {
-//    return false;
-//    }
+    //    QSqlQuery q;
+    //    q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
+    //    q.next();
+    //    if(!q.isNull(0)) {
+    //    return false;
+    //    }
     return true;
 }

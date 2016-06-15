@@ -24,11 +24,14 @@ void dialogTimes::GUI()
 
     model->setTable("TIMES");
     model->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
-    model->setHeaderData(0, Qt::Horizontal, tr("Шоу"));
-    model->setHeaderData(1, Qt::Horizontal, tr("Время"));
+    model->setHeaderData(0, Qt::Horizontal, "ID");
+    model->setHeaderData(1, Qt::Horizontal, tr("Шоу"));
+    model->setHeaderData(2, Qt::Horizontal, tr("Время"));
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
-    model->setRelation(0, QSqlRelation("BLDG", "ID", "NAME"));
+    model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME"));
+    model->relation(1).displayColumn();
+    qDebug() << "апшипка" << model->lastError();
     model->setSort(0, Qt::AscendingOrder);
     model->select();
 
@@ -36,8 +39,8 @@ void dialogTimes::GUI()
 
     view = new QTableView;
     view->setModel(model);
-    view->setItemDelegateForColumn(0,new QSqlRelationalDelegate(view));
-   // view->hideColumn(0);  /// здесь
+    view->setItemDelegateForColumn(1,new QSqlRelationalDelegate(view));
+    view->hideColumn(0);  /// здесь
     view->resizeColumnsToContents();
 
 
@@ -52,18 +55,27 @@ void dialogTimes::GUI()
     connect(m_deleteRow, SIGNAL(released()), this, SLOT(clickedDeleteRow()));
     connect(m_addRow, SIGNAL(released()), this, SLOT(clickedAddRow()));
 }
-
+#include <QVariant>
+#include <QSqlRecord>
 void dialogTimes::editTimes()
 {
-   model->select();
-   this->exec();
-   this->clearFocus();
+    //    model->select();
+    //    this->exec();
+    //    this->clearFocus();
+    model->relationModel(1)->select();
+    qDebug() << "and there" << model->data(model->index(0,2));
+    qDebug() << "edit times" << model->data(model->index(0, 1));
 }
 
 void dialogTimes::clickedSubmit()
 {
-    if(!isNull())
-    model->submitAll();
+    if((!isNull() && isCanAdd()) || del) {
+        qDebug () << "del";
+        model->submitAll();
+        // model->select();
+        del = false;
+        qDebug() << "model error" << model->lastError();
+    }
 }
 
 void dialogTimes::clickedRevert()
@@ -75,6 +87,7 @@ void dialogTimes::clickedRevert()
 void dialogTimes::clickedDeleteRow()
 {
     model->removeRow(view->currentIndex().row());
+    del = true;
 }
 
 void dialogTimes::clickedAddRow()
@@ -88,15 +101,15 @@ void dialogTimes::clickedAddRow()
 
 bool dialogTimes::isNull()
 {
-//    qDebug() << view->model()->data(view->currentIndex()).toString();
-//    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
+    //    qDebug() << view->model()->data(view->currentIndex()).toString();
+    //    qDebug() << view->model()->data(view->model()->index(0, 1)).toString();
 
     for(int i = 0; i < model->rowCount(); i++) {
-       if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
-               || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()) {
-           qDebug() << "nope";
-           return true;
-       }
+        if(view->model()->data(view->model()->index(i, 1)).toString().isEmpty()
+                || view->model()->data(view->model()->index(i, 2)).toString().isEmpty()) {
+            qDebug() << "nope" << del;
+            return true;
+        }
     }
     return false;
 }
@@ -136,7 +149,66 @@ bool dialogTimes::isCanDelete(QString id)
     q.exec(QString("select IDTYPE from BLDG where IDTYPE = %1").arg(id));
     q.next();
     if(!q.isNull(0)) {
-    return false;
+        return false;
     }
     return true;
 }
+
+bool dialogTimes::isCanAdd()
+{
+    bool can = true;
+    for(int i = 0; i < model->rowCount(); i++) {
+        if(model->isDirty(model->index(i,2))) {
+            QString date = model->data(model->index(i,2)).toString(); // time from times
+            QString id = model->data(model->index(i,0)).toString(); // id from times
+
+            qDebug() << "it's" << model->relationModel(1)->hasIndex(0,1);
+//            model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME, ID_SHOW as ID_SHOW"));
+//           // model->select();
+//            model->relationModel(1)->select();
+//            QString idShow = model->data(model->index(i,2)).toString();
+//            model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME"));
+//            model->relationModel(1)->select();
+
+//            qDebug() <<"idShow" << idShow;
+
+            QString idBldg = model->relationModel(1)->record(1).value("IDBLDG").toString();
+             //я не понамаю, почему это работает, поэтому не трожь
+            //все просто. это не работает. нам нужен индекс строки в таблице шоу
+            qDebug() << "idBldg" <<idBldg;
+
+            ////////////////////
+            date.replace("T",":");
+            qDebug() << "date" << date;
+            QSqlQuery q;
+            q.exec(QString("select sw.SHOWNAME, tm.TIME + (sw.DURATION)*(1/24/60) "
+                           "from TIMES tm inner join SHOW sw on tm.ID_SHOW=sw.ID "
+                           "where (tm.TIME + (sw.DURATION)*(1/24/60)) >= to_date('%1', 'yyyy-mm-dd:hh24:mi:ss') "
+                           "and sw.IDBLDG = %3 "
+                           "and not tm.ID = %2").arg(date).arg(id).arg(idBldg));
+            q.next();
+            qDebug() << "query" << q.lastQuery() << q.lastError();
+            if(!q.isNull(0)) {
+                QString type = model->data(model->index(i,1)).toString();
+                qDebug() << "type" << type;
+                QMessageBox::critical(0, QObject::tr("Ошибка добавления"),
+                                      /* db.lastError().text()*/ QString("Шоу %1 пересекается с другим").arg(type));
+                can = false;
+            }
+            qDebug() << "first" << q.first();
+        }
+    }
+    qDebug() << "can" << can;
+    return can;
+    //    if(q.isNull(0))
+    //        return true;
+    //    qDebug() << "cant add";
+    //    return false;
+
+}
+//select sw.SHOWNAME, tm.TIME + (sw.DURATION)*(1/24/60), sw.IDBLDG
+//from TIMES tm inner join SHOW sw on tm.ID_SHOW=sw.ID
+//where (tm.TIME + (sw.DURATION)*(1/24/60)) >= to_date('2000-01-01:00:00:00', 'yyyy-mm-dd:hh24:mi:ss') and
+//--нужна проверка на здание. пока хрень
+//sw.IDBLDG
+//-- and not tm.ID = 0

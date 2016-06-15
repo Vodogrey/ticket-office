@@ -21,7 +21,7 @@
 #include <QObject>
 #include <QMessageBox>
 
-#include <QSortFilterProxyModel>
+#include <QSqlQueryModel>
 
 class zoneSqlTableModel : public QSqlRelationalTableModel
 {
@@ -59,7 +59,7 @@ private:
     QTableView* view;
 
     zoneSqlTableModel *model;
-    QSortFilterProxyModel *proxy;
+//    QSortFilterProxyModel *proxy;
     //QSqlRelationalTableModel* model;
 
     bool del;
