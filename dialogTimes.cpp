@@ -30,7 +30,8 @@ void dialogTimes::GUI()
 
     model->setJoinMode(QSqlRelationalTableModel::LeftJoin); // чтобы строки с NULL не пропадали
     model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME"));
-    model->relation(1).displayColumn();
+    qDebug() << "name" << model->relationModel(1)->objectName();
+    qDebug() << "disp" <<model->relation(1).displayColumn();
     qDebug() << "апшипка" << model->lastError();
     model->setSort(0, Qt::AscendingOrder);
     model->select();
@@ -158,11 +159,21 @@ bool dialogTimes::isCanAdd()
 {
     bool can = true;
     for(int i = 0; i < model->rowCount(); i++) {
-        if(model->isDirty(model->index(i,2))) {
-            QString date = model->data(model->index(i,2)).toString(); // time from times
+        if(model->isDirty(model->index(i,2)) || model->isDirty(model->index(i,1))) {
+            QDateTime date = model->data(model->index(i,2)).toDateTime(); // time from times
             QString id = model->data(model->index(i,0)).toString(); // id from times
+            QString showName = model->data(model->index(i,1)).toString();
 
-            qDebug() << "it's" << model->relationModel(1)->hasIndex(0,1);
+// в попец все это дело. берем и гарантируем единственное название шоу.
+        //    qDebug() << "showName" << showName;
+            QSqlQuery getBldgId;
+            getBldgId.exec(QString("select IDBLDG, DURATION "
+                                   "from SHOW "
+                                   "where SHOWNAME LIKE '%1'").arg(showName));
+            getBldgId.next();
+            QString idBldg = getBldgId.value(0).toString();
+            QString dur = getBldgId.value(1).toString();
+            qDebug() << "idBldg" << idBldg;
 //            model->setRelation(1, QSqlRelation("SHOW", "ID", "SHOWNAME, ID_SHOW as ID_SHOW"));
 //           // model->select();
 //            model->relationModel(1)->select();
@@ -172,30 +183,81 @@ bool dialogTimes::isCanAdd()
 
 //            qDebug() <<"idShow" << idShow;
 
-            QString idBldg = model->relationModel(1)->record(1).value("IDBLDG").toString();
+            //QString idBldg = model->relationModel(1)->record(1).value("IDBLDG").toString();
              //я не понамаю, почему это работает, поэтому не трожь
             //все просто. это не работает. нам нужен индекс строки в таблице шоу
-            qDebug() << "idBldg" <<idBldg;
 
             ////////////////////
-            date.replace("T",":");
+//            date.replace("T",":");
             qDebug() << "date" << date;
+
+
             QSqlQuery q;
-            q.exec(QString("select sw.SHOWNAME, tm.TIME + (sw.DURATION)*(1/24/60) "
-                           "from TIMES tm inner join SHOW sw on tm.ID_SHOW=sw.ID "
-                           "where (tm.TIME + (sw.DURATION)*(1/24/60)) >= to_date('%1', 'yyyy-mm-dd:hh24:mi:ss') "
-                           "and sw.IDBLDG = %3 "
-                           "and not tm.ID = %2").arg(date).arg(id).arg(idBldg));
-            q.next();
-            qDebug() << "query" << q.lastQuery() << q.lastError();
-            if(!q.isNull(0)) {
-                QString type = model->data(model->index(i,1)).toString();
-                qDebug() << "type" << type;
-                QMessageBox::critical(0, QObject::tr("Ошибка добавления"),
-                                      /* db.lastError().text()*/ QString("Шоу %1 пересекается с другим").arg(type));
-                can = false;
+//            q.exec(QString("select sw.SHOWNAME, tm.TIME + (sw.DURATION)*(1/24/60) " // тут все нахрен не нужно, но что-то же
+//                           // надо селектить, ибо делаю проверку на наличие чего-либо. нужно
+//                           // так же добавить проверку, что шоу влезает между двумя другими
+//                           "from TIMES tm inner join SHOW sw on tm.ID_SHOW=sw.ID "
+//                           "where (tm.TIME + (sw.DURATION)*(1/24/60)) >= to_date('%1', 'yyyy-mm-dd:hh24:mi:ss') "
+//                           "and sw.IDBLDG = %3 "
+//                           "and not tm.ID = %2").arg(date).arg(id).arg(idBldg));
+//            q.exec(QString("select tm.id, sw.SHOWNAME, tm.TIME + (sw.DURATION)*(1/24/60) "
+//                           "from TIMES tm inner join SHOW sw on tm.ID_SHOW=sw.ID "
+//                           "where ((tm.TIME + (sw.DURATION)*(1/24/60)) >= to_date('%1', 'yyyy-mm-dd:hh24:mi:ss') "
+//                           "or tm.TIME - (sw.DURATION)*(1/24/60) > to_date('2016-01-01:00:00:00', 'yyyy-mm-dd:hh24:mi:ss')) "
+//                           "and sw.IDBLDG = %3 "
+//                           "and not tm.ID = %2").arg(date).arg(id).arg(idBldg));
+
+// ЭТО И ЕСТЬ ГЕИАЛЬНОЕ РЕШЕНИЕ!!!
+// ЛУЧШЕЕ ТВОРЕНИЕ ЩИЛАВЕЩИСТВА
+            q.exec(QString("select tm.TIME, tm.TIME + sw.DURATION*(1/24/60), sw.IDBLDG, sw.DURATION "
+                           "from TIMES tm inner join SHOW sw on tm.ID_SHOW = sw.ID "
+                           "where sw.IDBLDG = %1 and not tm.ID = %2 "
+                           "order by TIME desc").arg(idBldg).arg(id));
+          //  q.next();
+            qDebug() << "query" << q.lastQuery();
+            QDateTime endPrevious /*= q.value(1).toDateTime()*/;
+            QDateTime startPrevious/* = q.value(0).toDateTime()*/;
+            while(q.value(1) > date || q.isNull(1)) {
+                q.next();
+                qDebug() << "startPrev endPrev" << q.value(0).toString() << q.value(1).toString();
+                endPrevious = q.value(1).toDateTime();
+                startPrevious = q.value(0).toDateTime();
             }
-            qDebug() << "first" << q.first();
+            QDateTime startNext = q.value(0).toDateTime();
+            qDebug() << "if next" << startNext;
+            if(q.previous()) {
+                startNext = q.value(0).toDateTime();
+            }
+            else {
+                qDebug() << "i'm there";
+                if(endPrevious < date)
+                continue;
+            }
+
+            qDebug() << "dates" << endPrevious.secsTo(startNext) << endPrevious.secsTo(date) << (dur.toInt() * 60);
+            qDebug() << date.secsTo(startPrevious) << (dur.toInt() * 60);
+            qDebug() << "endPrevious" << endPrevious << "\nstartNext" << startNext;
+            if(((endPrevious.secsTo(startNext) <= (dur.toInt() * 60)) && date > endPrevious)
+                    || (date.secsTo(startPrevious) <= (dur.toInt() * 60))) {
+                QString type = model->data(model->index(i,1)).toString();
+                QMessageBox::critical(0, QObject::tr("Ошибка добавления"),
+                                     /* db.lastError().text()*/ QString("Шоу %1 в строке %2 пересекается с другим").arg(type).arg(i+1));
+                return false;
+            }
+
+            qDebug() << "query" << q.lastQuery() << q.lastError();
+//            if(!q.isNull(0)) {
+//                QString type = model->data(model->index(i,1)).toString();
+//                qDebug() << "type" << type;
+//                QMessageBox::critical(0, QObject::tr("Ошибка добавления"),
+//                                      /* db.lastError().text()*/ QString("Шоу %1 пересекается с другим").arg(type));
+//                can = false;
+//            }
+            qDebug() << "datetime" << q.value(1).toDateTime();
+//            if(q.value(1).toDateTime() > date) { // вот это проверяет, не попадает ли конец шоу в начало добавляемого
+//                q.next();
+//                if(q.value().toDateTime() > )
+//            }
         }
     }
     qDebug() << "can" << can;

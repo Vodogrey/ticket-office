@@ -22,6 +22,7 @@
 #include <QObject>
 
 #include <QMessageBox>
+#include <QDateTime>
 
 
 class timesSqlTableModel : public QSqlRelationalTableModel
