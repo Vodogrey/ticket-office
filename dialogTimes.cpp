@@ -217,8 +217,8 @@ bool dialogTimes::isCanAdd()
             qDebug() << "query" << q.lastQuery();
             QDateTime endPrevious /*= q.value(1).toDateTime()*/;
             QDateTime startPrevious/* = q.value(0).toDateTime()*/;
-            while(q.value(1) > date || q.isNull(1)) {
-                q.next();
+            //qDebug() << "last" << q.last();
+            while((q.value(1) > date || q.isNull(1)) && q.next()) {
                 qDebug() << "startPrev endPrev" << q.value(0).toString() << q.value(1).toString();
                 endPrevious = q.value(1).toDateTime();
                 startPrevious = q.value(0).toDateTime();
